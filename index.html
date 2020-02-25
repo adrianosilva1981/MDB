@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR" ng-app="movieApp">
+<head>
+	<title>The Movie Database</title>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" type="text/css" href='assets/css/uikit.min.css' />
+	<link rel="stylesheet" type="text/css" href='assets/css/custom.css' />
+	<script type="text/javascript" src="assets/js/uikit.min.js" ></script>
+	<script type="text/javascript" src="assets/js/uikit-icons.min.js"></script>
+	<script type="text/javascript" src="assets/js/angular.min.js"></script>
+	<script type="text/javascript" src="assets/js/angular-sanitize.min.js"></script>
+	<script type="text/javascript" src="assets/js/controllers/index.js"></script>
+</head>
+<body ng-controller="movieController" ng-init="onInit()" ng-cloak>
+	<div id="navbar">
+		<div uk-grid>
+			<div class="uk-width-expand">The Movie Database</div>
+			<div class="uk-width-1-3 uk-text-right uk-hidden@s">
+				<a href="#offcanvas-menu" uk-toggle>
+					<span uk-icon="menu"></span>
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<div id="offcanvas-menu" uk-offcanvas="overlay: true">
+		<div class="uk-offcanvas-bar">
+			<button class="uk-offcanvas-close" type="button" uk-close></button>
+			<h3>Title</h3>
+			<ul class="uk-list">
+				<li><a ng-click="setMenu(0)">Em cartaz</a></li>
+				<li><a ng-click="setMenu(1)">Populares</a></li>
+				<li><a ng-click="setMenu(2)">Melhores avaliados</a></li>
+				<li><a ng-click="setMenu(3)">Busca</a></li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="uk-container uk-margin-large-top">
+		<h2>The Movie Database</h2>
+
+		<ul uk-tab class="uk-visible@s">
+			<li ng-class="{'uk-active': menu === 0}"><a ng-click="setMenu(0, 'now_playing')">Em cartaz</a></li>
+			<li ng-class="{'uk-active': menu === 1}"><a ng-click="setMenu(1, 'popular')">Populares</a></li>
+			<li ng-class="{'uk-active': menu === 2}"><a ng-click="setMenu(2, 'top_rated')">Melhores avaliados</a></li>
+			<li ng-class="{'uk-active': menu === 3}"><a ng-click="setMenu(3, 'search')">Busca</a></li>
+		</ul>
+
+		<ul id="main_content" class="uk-switcher uk-margin">
+			<li><h3>Em cartaz</h3></li>
+			<li><h3>Mais populares</h3></li>
+			<li><h3>Melhores avaliados</h3></li>
+			<li>
+				<h3>Buscar</h3>
+				<div class="uk-inline">
+					<span class="uk-form-icon uk-form-icon-flip" uk-icon="icon: search"></span>
+					<input class="uk-input" type="text" ng-model="query" ng-keyup="pressEnter($event)" placeholder="Procurar">
+				</div>
+			</li>
+		</ul>
+
+		<div>
+			<ul ng-if="!loading" class="uk-list uk-list-large uk-list-divider">
+				<li ng-repeat="(key, value) in movies track by $index">
+					<div class="uk-grid-small" uk-grid>
+						<div class="uk-width-1-4">
+							<img ng-src="https://image.tmdb.org/t/p/w185_and_h278_bestv2/{{value.poster_path}}" onerror="this.src = 'assets/img/default_poster.jpg'">
+						</div>
+						<div class="uk-width-3-4">
+							<h3><b>{{value.title}}</b></h3>
+							<div><small><b>Lançamento:</b> {{value.release_date | date:'dd/MM/yyyy'}}</small></div>
+							<p>{{value.overview}}</p>
+							<p><small><a href="#modal-movie" ng-click="details(value.id)" uk-toggle>Mais detalhes</a></small></p>
+						</div>
+					</div>
+				</li>
+			</ul>
+			<p ng-if="loading" class="uk-text-center"><img src="assets/img/loading.gif"></p>
+			<p ng-if="!loading && none" class="uk-text-center">Nenhum filme encontrado</p>
+		</div>
+
+		<div class="uk-flex uk-flex-center">
+			<div>
+				<ul class="uk-pagination">
+					<li ng-if="page > 1"><a ng-click="turnPage('-')"><span uk-pagination-previous></span>&nbsp;Anterior</a></li>
+					<li ng-if="page < pages"><a ng-click="turnPage('+')">Próximo&nbsp;<span uk-pagination-next></span></a></li>
+				</ul>
+			</div>
+		</div>
+
+	</div>
+
+	<div id="modal-movie" class="uk-flex-top" uk-modal>
+		<div class="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
+			<button class="uk-modal-close-default" type="button" uk-close></button>
+
+			<div class="uk-grid-small" uk-grid>
+				<div class="uk-width-1-4">
+					<img ng-src="https://image.tmdb.org/t/p/w185_and_h278_bestv2/{{movie.poster_path}}" onerror="this.src = 'assets/img/default_poster.jpg'">
+				</div>
+				<div class="uk-width-3-4">
+					<h3><b>{{movie.title}}</b></h3>
+					<div><small><b>Lançamento:</b> {{movie.release_date | date:'dd/MM/yyyy'}}</small></div>
+					<ul class="uk-subnav uk-subnav-divider" uk-margin>
+						<li ng-repeat="(key, value) in movie.genres"><small>{{value.name}}</small></li>
+					</ul>
+					<p>{{movie.overview}}</p>
+				</div>
+			</div>
+
+			<ul class="uk-list uk-list-divider">
+				<li ng-repeat="(key, value) in trailers">
+					<div class="videoWrapper" ng-if="value.site === 'YouTube'">
+						<iframe width="560" height="315" src="{{value.key}}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe>
+					</div>
+				</li>
+			</ul>
+
+		</div>
+	</div>
+
+	<!--
+		{
+			"poster_path": "/IfB9hy4JH1eH6HEfIgIGORXi5h.jpg",
+			"adult": false,
+			"overview": "Jack Reacher must uncover the truth behind a major government conspiracy in order to clear his name. On the run as a fugitive from the law, Reacher uncovers a potential secret from his past that could change his life forever.",
+			"release_date": "2016-10-19",
+			"genre_ids": [
+				53,
+				28,
+				80,
+				18,
+				9648
+				],
+			"id": 343611,
+			"original_title": "Jack Reacher: Never Go Back",
+			"original_language": "en",
+			"title": "Jack Reacher: Never Go Back",
+			"backdrop_path": "/4ynQYtSEuU5hyipcGkfD6ncwtwz.jpg",
+			"popularity": 26.818468,
+			"vote_count": 201,
+			"video": false,
+			"vote_average": 4.19
+		}
+	-->
+
+</body>
+</html>
